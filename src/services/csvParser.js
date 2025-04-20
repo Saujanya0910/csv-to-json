@@ -82,6 +82,28 @@ class CSVParserService {
       };
     }
 
+    // required headers
+    const requiredHeaders = ['name.firstName', 'name.lastName', 'age'];
+    try {
+      const fileContent = fs.readFileSync(file.path, 'utf-8');
+      const firstLine = fileContent.split('\n')[0].trim();
+      const headers = this.parseHeaders(firstLine);
+      
+      for (const requiredHeader of requiredHeaders) {
+        if (!headers.includes(requiredHeader)) {
+          return {
+            isValid: false,
+            message: `Required header "${requiredHeader}" is missing in the CSV file.`
+          };
+        }
+      }
+    } catch (error) {
+      return {
+        isValid: false,
+        message: `Could not validate headers: ${error.message}`
+      };
+    }
+
     return {
       isValid: true,
       message: 'File is valid'
