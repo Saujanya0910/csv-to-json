@@ -1,10 +1,15 @@
+const express = require('express');
+const csvController = require('../controllers/csvController');
+const { uploadCSV } = require('../middlewares/fileUploadMiddleware');
 
 /**
  * CSV Routes
- * @param {import('express').Application} app 
+ * @returns {import('express').Router} Express router
  */
-module.exports = function (app) {
-  const csvController = require('../controllers/csvController');
+module.exports = function () {
+  const router = express.Router();
   
-  app.post('/process-csv', csvController.processCSV);
+  router.post('/process', uploadCSV, csvController.processCSV);
+  
+  return router;
 };

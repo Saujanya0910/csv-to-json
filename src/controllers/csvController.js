@@ -1,8 +1,10 @@
 const csvParser = require('../services/csvParser');
 const recordProcessor = require('../services/recordProcessor');
-const fs = require('fs');
+const fs = require('fs').promises;
 
 class CSVController {
+
+  constructor() {}
   
   /**
    * Processes the CSV file and inserts records into the database.
@@ -21,38 +23,35 @@ class CSVController {
       }
 
       const records = await csvParser.parseCSV(req.file.path);
-      for (const record of records) {
-        const processedRecord = recordProcessor.processRecord(record);
-        await global.db.insertUser(
-          processedRecord.name,
-          processedRecord.age,
-          processedRecord.address,
-          processedRecord.additionalInfo
-        );
-      }
+      const processedRecords = records.map(r => recordProcessor.processRecord(r));
 
-      const ageDistribution = recordProcessor.calculateAgeDistribution(records);
+      await global.db.insertUsersInBulk(processedRecords);
+
+      const ageDistribution = recordProcessor.calculateAgeDistribution(processedRecords);
       console.log('\nAge-Group % Distribution');
       ageDistribution.forEach(({ group, percentage }) => {
         console.log(`${group}: ${percentage}%`);
       });
 
       try {
-        fs.promises.unlink(req.file.path);
+        fs.unlink(req.file.path);
       } catch (cleanupError) {
         console.error('[processCSV] Error cleaning up file:', cleanupError);
       }
 
       return res.status(201).json({
         message: 'CSV processed successfully',
-        ageDistribution 
+        data: {
+          ageDistribution,
+          records: processedRecords
+        }
       });
     } catch (error) {
       console.error('[processCSV] Error processing CSV:', error);
 
       if (req.file && req.file.path) {
         try {
-          fs.promises.unlink(req.file.path);
+          fs.unlink(req.file.path);
         } catch (cleanupError) {
           console.error('[processCSV] Error cleaning up file:', cleanupError);
         }

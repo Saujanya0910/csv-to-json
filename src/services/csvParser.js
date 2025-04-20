@@ -3,6 +3,8 @@ const dot = require('dot-object');
 
 class CSVParserService {
 
+  constructor() {}
+
   /**
    * Parses a CSV file and returns an array of objects
    * @param {string} filePath - Path to the CSV file
@@ -55,7 +57,7 @@ class CSVParserService {
    */
   validateCSVFile(file) {
     // mime type
-    if (!(file.mimetype === 'text/csv' && file.mimetype === 'application/vnd.ms-excel')) {
+    if (!(file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel')) {
       return {
         isValid: false,
         message: 'Invalid file type. Only CSV files are allowed.'

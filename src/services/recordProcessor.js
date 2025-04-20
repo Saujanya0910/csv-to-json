@@ -1,5 +1,7 @@
 class RecordProcessorService {
 
+  constructor() {}
+
   /**
    * Processes a list of records and returns a new list with transformed data.
    * @param {Object[]} records - The list of records to process.

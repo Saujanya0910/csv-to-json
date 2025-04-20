@@ -22,10 +22,33 @@ class DatabaseService {
       port: config.port,
       user: config.user,
       password: config.password,
-      database: config.database
+      database: config.database,
+      ssl: {
+        rejectUnauthorized: false
+      }
     });
-    
-    DatabaseService.instance = this;
+
+    this.runDefaultQuery().then(() => {
+      console.log("[DatabaseService] Default query executed successfully");
+      DatabaseService.instance = this;
+    }).catch((error) => {
+      console.error("[DatabaseService] Error executing default query:", error);
+    });
+  }
+
+  /**
+   * Runs a default query to test the database connection.
+   * @returns {Promise<import('pg').QueryResult>} The result of the query.
+   */
+  async runDefaultQuery() {
+    try {
+      const result = await this.pool.query('SELECT NOW()');
+      console.log("[DatabaseService] Default query result:", result.rows);
+      return result.rows;
+    } catch (error) {
+      console.error("[DatabaseService] Error running default query:", error);
+      throw error;
+    }
   }
 
   /**
@@ -37,13 +60,55 @@ class DatabaseService {
    * @returns {Promise<import('pg').QueryResult>} The result of the insertion.
    */
   async insertUser(name, age, address, additionalInfo) {
+    if (!(name && age && address && additionalInfo)) {
+      throw new Error("Invalid input: all fields are required");
+    }
+
     try {
       return await this.pool.query(
-        'INSERT INTO users (name, age, address, additional_info) VALUES ($1, $2, $3, $4)',
+        'INSERT INTO public.users (name, age, address, additional_info) VALUES ($1, $2, $3, $4)',
         [name, age, JSON.stringify(address), JSON.stringify(additionalInfo)]
       );
     } catch (error) {
       throw new Error(`Database insertion failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Inserts multiple users into the database in one query.
+   * @param {Array<{name: string, age: number, address: object, additionalInfo: object}>} users - The array of user objects to insert.
+   * @returns {Promise<import('pg').QueryResult>} The result of the bulk insertion.
+   */
+  async insertUsersInBulk(users) {
+    if (!Array.isArray(users) || users.length === 0) {
+      throw new Error("Invalid input: users should be a non-empty array");
+    }
+
+    try {
+      // Build parameterized query with multiple values
+      const values = [];
+      const placeholders = [];
+      let paramIndex = 1;
+      
+      for (const user of users) {
+        placeholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3})`);
+        values.push(
+          user.name,
+          user.age,
+          JSON.stringify(user.address),
+          JSON.stringify(user.additionalInfo)
+        );
+        paramIndex += 4;
+      }
+      
+      const query = `
+        INSERT INTO public.users (name, age, address, additional_info)
+        VALUES ${placeholders.join(',')}
+      `;
+      
+      return await this.pool.query(query, values);
+    } catch (error) {
+      throw new Error(`Bulk database insertion failed: ${error.message}`);
     }
   }
 

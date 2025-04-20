@@ -1,14 +1,18 @@
+const express = require('express');
+const csvRoutes = require('./csv.routes');
 
 /**
  * Application routes
- * @param {import('express').Application} app 
+ * @returns {import('express').Router} Express router
  */
-module.exports = function (app) {
-  const csvRoutes = require('./csv.routes');
+module.exports = function () {
+  const router = express.Router();
 
   // default route
-  app.get('/', (_, res) => res.send('Hello World!'));
+  router.get('/', (_, res) => res.send('Hello World!'));
 
   // csv routes
-  app.use('/csv', csvRoutes(app));
+  router.use('/csv', csvRoutes());
+  
+  return router;
 }
