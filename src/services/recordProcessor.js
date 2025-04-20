@@ -12,17 +12,17 @@ class RecordProcessorService {
     const fullName = `${name.firstName} ${name.lastName}`;
     
     const address = {
-      line1: rest.address?.line1,
-      line2: rest.address?.line2,
-      city: rest.address?.city,
-      state: rest.address?.state
+      line1: rest.address?.line1 || '',
+      line2: rest.address?.line2 || '',
+      city: rest.address?.city || '',
+      state: rest.address?.state || ''
     };
     
     delete rest.address;
     
     return {
       name: fullName,
-      age: parseInt(age),
+      age: parseInt(age) || 0,
       address,
       additionalInfo: rest
     };
