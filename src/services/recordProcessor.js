@@ -30,8 +30,7 @@ class RecordProcessorService {
 
   /**
    * Calculates the age distribution from a list of records.
-   * @param {Object[]} records - The list of records to process.
-   * @returns {Object[]} - The age distribution as an array of objects.
+   * @param {Partial<import("./database").IUser>[]} records - The list of records to process.
    */
   calculateAgeDistribution(records) {
     const distribution = {

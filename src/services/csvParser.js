@@ -55,37 +55,37 @@ class CSVParserService {
    * @param {Express.Multer.File} file - The uploaded file object
    * @returns {Object} Validation result with isValid flag and message
    */
-  validateCSVFile(file) {
-    // mime type
-    if (!(file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel')) {
-      return {
-        isValid: false,
-        message: 'Invalid file type. Only CSV files are allowed.'
-      };
-    }
-
-    // file extension
-    const fileExtension = file.originalname.split('.').pop().toLowerCase();
-    if (fileExtension !== 'csv') {
-      return {
-        isValid: false,
-        message: 'Invalid file extension. Only .csv files are allowed.'
-      };
-    }
-
-    // file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return {
-        isValid: false,
-        message: 'File too large. Maximum size is 5MB.'
-      };
-    }
-
-    // required headers
-    const requiredHeaders = ['name.firstName', 'name.lastName', 'age'];
+  async validateCSVFile(file) {
     try {
-      const fileContent = fs.readFileSync(file.path, 'utf-8');
+      // mime type
+      if (!(file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel')) {
+        return {
+          isValid: false,
+          message: 'Invalid file type. Only CSV files are allowed.'
+        };
+      }
+  
+      // file extension
+      const fileExtension = file.originalname.split('.').pop().toLowerCase();
+      if (fileExtension !== 'csv') {
+        return {
+          isValid: false,
+          message: 'Invalid file extension. Only .csv files are allowed.'
+        };
+      }
+  
+      // file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        return {
+          isValid: false,
+          message: 'File too large. Maximum size is 5MB.'
+        };
+      }
+
+      // required headers
+      const requiredHeaders = ['name.firstName', 'name.lastName', 'age'];
+      const fileContent = await fs.readFile(file.path, 'utf-8');
       const firstLine = fileContent.split('\n')[0].trim();
       const headers = this.parseHeaders(firstLine);
       
@@ -97,17 +97,19 @@ class CSVParserService {
           };
         }
       }
+  
+      return {
+        isValid: true,
+        message: 'File is valid'
+      };
+
     } catch (error) {
+      console.error('[CSVParserService] Error validating CSV file:', error);
       return {
         isValid: false,
-        message: `Could not validate headers: ${error.message}`
+        message: `File validation failed: ${error.message}`
       };
     }
-
-    return {
-      isValid: true,
-      message: 'File is valid'
-    };
   }
 }
 

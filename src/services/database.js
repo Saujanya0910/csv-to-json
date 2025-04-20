@@ -1,6 +1,15 @@
 const { Pool } = require('pg');
 
 /**
+ * @typedef {Object} IUser
+ * @property {string} name - User's full name (firstName + lastName)
+ * @property {number} age - User's age
+ * @property {Object|null} address - User's address as a JSON object
+ * @property {Object|null} additional_info - Additional information about the user as a JSON object
+ * @property {number} id - Unique identifier for the user (auto-incremented)
+ */
+
+/**
  * Service for handling database operations
  * @class
  */
@@ -57,7 +66,7 @@ class DatabaseService {
    * @param {number} age - The age of the user.
    * @param {object} address - The address of the user.
    * @param {object} additionalInfo - Additional information about the user.
-   * @returns {Promise<import('pg').QueryResult>} The result of the insertion.
+   * @returns {Promise<import('pg').QueryResult<Partial<IUser>>>} The result of the insertion.
    */
   async insertUser(name, age, address, additionalInfo) {
     if (!(name && age && address && additionalInfo)) {
@@ -77,7 +86,7 @@ class DatabaseService {
   /**
    * Inserts multiple users into the database in one query.
    * @param {Array<{name: string, age: number, address: object, additionalInfo: object}>} users - The array of user objects to insert.
-   * @returns {Promise<import('pg').QueryResult>} The result of the bulk insertion.
+   * @returns {Promise<import('pg').QueryResult<Partial<IUser>>>} The result of the bulk insertion.
    */
   async insertUsersInBulk(users) {
     if (!Array.isArray(users) || users.length === 0) {
@@ -109,6 +118,22 @@ class DatabaseService {
       return await this.pool.query(query, values);
     } catch (error) {
       throw new Error(`Bulk database insertion failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Fetches all users from the database.
+   * @returns {Promise<Array<IUser>>} Array of user objects.
+   */
+  async getAllUsers() {
+    try {
+      const result = await this.pool.query('SELECT name, age FROM public.users');
+      return result.rows.map(row => ({
+        name: row.name,
+        age: row.age
+      }));
+    } catch (error) {
+      throw new Error(`Failed to fetch users: ${error.message}`);
     }
   }
 

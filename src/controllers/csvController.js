@@ -17,7 +17,7 @@ class CSVController {
         return res.status(400).json({ message: 'No CSV file uploaded' });
       }
 
-      const validationResult = csvParser.validateCSVFile(req.file);
+      const validationResult = await csvParser.validateCSVFile(req.file);
       if (!validationResult.isValid) {
         return res.status(400).json({ message: validationResult.message });
       }
@@ -27,33 +27,42 @@ class CSVController {
 
       await global.db.insertUsersInBulk(processedRecords);
 
-      const ageDistribution = recordProcessor.calculateAgeDistribution(processedRecords);
-      console.log('\nAge-Group % Distribution');
-      ageDistribution.forEach(({ group, percentage }) => {
+      const currentAgeDistribution = recordProcessor.calculateAgeDistribution(processedRecords);
+      console.log('\nCurrent Age-Group % Distribution');
+      currentAgeDistribution.forEach(({ group, percentage }) => {
+        console.log(`${group}: ${percentage}%`);
+      });
+
+      // calculate overall age distribution
+      const allUsers = await global.db.getAllUsers();
+      const overallAgeDistribution = recordProcessor.calculateAgeDistribution(allUsers);
+      console.log('\nOverall Age-Group % Distribution');
+      overallAgeDistribution.forEach(({ group, percentage }) => {
         console.log(`${group}: ${percentage}%`);
       });
 
       try {
         fs.unlink(req.file.path);
       } catch (cleanupError) {
-        console.error('[processCSV] Error cleaning up file:', cleanupError);
+        console.error('[CSVController] Error cleaning up file:', cleanupError);
       }
 
       return res.status(201).json({
         message: 'CSV processed successfully',
         data: {
-          ageDistribution,
+          currentAgeDistribution,
+          overallAgeDistribution,
           records: processedRecords
         }
       });
     } catch (error) {
-      console.error('[processCSV] Error processing CSV:', error);
+      console.error('[CSVController] Error processing CSV:', error);
 
       if (req.file && req.file.path) {
         try {
           fs.unlink(req.file.path);
         } catch (cleanupError) {
-          console.error('[processCSV] Error cleaning up file:', cleanupError);
+          console.error('[CSVController] Error cleaning up file:', cleanupError);
         }
       }
       
